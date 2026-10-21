@@ -63,7 +63,7 @@ echo
 echo
 echo "[4] Проверки Nginx и HTTPS"
 
-if ssh -o BatchMode=yes devops 'systemctl is-active --quiet nginx'; then
+if systemctl is-active --quiet nginx; then
     echo "[OK]   Nginx работает"
     PASS=$((PASS + 1))
 else
@@ -71,7 +71,7 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-if curl --silent --show-error --fail     --cacert "$HOME/devops.crt"     --max-time 10     https://devops.local > /dev/null; then
+if curl --silent --show-error --fail     --cacert /etc/ssl/certs/devops.crt --resolve devops.local:443:127.0.0.1     --max-time 10     https://devops.local > /dev/null; then
     echo "[OK]   HTTPS работает"
     PASS=$((PASS + 1))
 else
