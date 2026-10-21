@@ -59,6 +59,26 @@ awk -F: '$3 >= 1000 && $3 < 65534 {
 }' /etc/passwd
 
 echo
+
+echo
+echo "[4] Проверки Nginx и HTTPS"
+
+if ssh -o BatchMode=yes devops 'systemctl is-active --quiet nginx'; then
+    echo "[OK]   Nginx работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Nginx не работает"
+    FAIL=$((FAIL + 1))
+fi
+
+if curl --silent --show-error --fail     --cacert "$HOME/devops.crt"     --max-time 10     https://devops.local > /dev/null; then
+    echo "[OK]   HTTPS работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] HTTPS недоступен"
+    FAIL=$((FAIL + 1))
+fi
+
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 
 if [[ "$FAIL" -eq 0 ]]; then
