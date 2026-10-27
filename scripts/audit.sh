@@ -59,6 +59,65 @@ awk -F: '$3 >= 1000 && $3 < 65534 {
 }' /etc/passwd
 
 echo
+
+echo
+echo "[4] Проверки Nginx и HTTPS"
+
+if systemctl is-active --quiet nginx; then
+    echo "[OK]   Nginx работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Nginx не работает"
+    FAIL=$((FAIL + 1))
+fi
+
+if curl --silent --show-error --fail     --cacert /etc/ssl/certs/devops.crt --resolve devops.local:443:127.0.0.1     --max-time 10     https://devops.local > /dev/null; then
+    echo "[OK]   HTTPS работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] HTTPS недоступен"
+    FAIL=$((FAIL + 1))
+fi
+
+echo
+echo "[5] Docker и PostgreSQL"
+
+if systemctl is-active --quiet docker; then
+    echo "[OK]   Docker Engine работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Docker Engine не работает"
+    FAIL=$((FAIL + 1))
+fi
+
+if docker compose version >/dev/null 2>&1; then
+    echo "[OK]   Docker Compose доступен"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Docker Compose недоступен"
+    FAIL=$((FAIL + 1))
+fi
+
+if (cd /home/devops/app && docker compose exec -T db sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"') >/dev/null 2>&1; then
+    echo "[OK]   PostgreSQL работает"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] PostgreSQL недоступен"
+    FAIL=$((FAIL + 1))
+fi
+
+if curl --silent --show-error --fail \
+    --cacert /etc/ssl/certs/devops.crt \
+    --resolve devops.local:443:127.0.0.1 \
+    --max-time 10 \
+    https://devops.local/app/health | grep -qx ok; then
+    echo "[OK]   Flask доступен через HTTPS"
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Flask недоступен через HTTPS"
+    FAIL=$((FAIL + 1))
+fi
+
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 
 if [[ "$FAIL" -eq 0 ]]; then
