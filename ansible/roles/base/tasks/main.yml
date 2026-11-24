@@ -21,6 +21,14 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Install Docker repository signing key
+  ansible.builtin.copy:
+    src: docker.asc
+    dest: /usr/share/keyrings/docker.asc
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Add official Docker repository
   ansible.builtin.deb822_repository:
     name: docker
@@ -33,7 +41,7 @@
       - stable
     architectures:
       - arm64
-    signed_by: https://download.docker.com/linux/ubuntu/gpg
+    signed_by: /usr/share/keyrings/docker.asc
     state: present
 
 - name: Install Docker Engine

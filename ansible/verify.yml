@@ -1,0 +1,50 @@
+---
+- name: Verify deployed application
+  hosts: vm
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Collect service status
+      ansible.builtin.service_facts:
+
+    - name: Verify Docker and Nginx services
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['docker.service'].state == 'running'
+          - ansible_facts.services['nginx.service'].state == 'running'
+        success_msg: "Docker and Nginx are running"
+
+    - name: Inspect application container
+      community.docker.docker_container_info:
+        name: "{{ app_container_name }}"
+      register: app_info
+
+    - name: Verify container and image
+      ansible.builtin.assert:
+        that:
+          - app_info.exists
+          - app_info.container.State.Running
+          - app_info.container.Config.Image == app_image ~ ':' ~ app_tag
+        success_msg: "Application container and image are correct"
+
+    - name: Check application directly
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_host_port }}/health"
+        return_content: true
+        status_code: 200
+      register: direct_health
+
+    - name: Check application through Nginx
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/health"
+        return_content: true
+        status_code: 200
+      register: nginx_health
+
+    - name: Verify health responses
+      ansible.builtin.assert:
+        that:
+          - direct_health.json.status == 'ok'
+          - nginx_health.json.status == 'ok'
+        success_msg: "All health checks passed"
