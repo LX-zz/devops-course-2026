@@ -1,0 +1,6 @@
+---
+app_image: "ghcr.io/lx-zz/devops-ci-app"
+app_tag: "7931b77881f84dff8eca2652638605b7bcdd4e6c"
+app_container_name: "devops-ci-app"
+app_host_port: 5000
+app_internal_port: 5000
